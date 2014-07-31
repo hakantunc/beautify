@@ -6,6 +6,7 @@ var path = require('path');
 var fs = require('fs');
 var beautify = require('js-beautify').js_beautify;
 var readline = require('readline');
+var mkdirp = require('mkdirp');
 
 program
   .version('0.0.1')
@@ -37,10 +38,15 @@ var options = {
   "wrap_line_length": 80
 };
 
-var dir = path.join(process.cwd(), program.directory);
+var cwd = process.cwd();
+var base = path.join(cwd, program.directory);
+var bbase = path.dirname(base);
+var root_dir = base.substr(bbase.length+1);
+var out_dir = '__beautified_' + root_dir;
+
 var stack = [];
 var count = 0;
-walk(dir);
+walk(base);
 
 function walk(dir) {
   var rl = readline.createInterface({
@@ -53,9 +59,11 @@ function walk(dir) {
     var stats = fs.lstatSync(dir_path);
     if ( stats.isFile() && path.extname(dirs[i]) === '.js' ) {
       var file = fs.readFileSync(dir_path, 'utf8');
-      var output_path = path.join(dir, '__zz_' + dirs[i]);
+      var tail = dir.substr(base.length+1);
+      var output_path = path.resolve(cwd, out_dir, tail, dirs[i]);
+      mkdirp.sync(path.resolve(cwd, out_dir, tail));
       var output_content = beautify(file, options);
-      // fs.writeFileSync(output_path, output_content);
+      fs.writeFileSync(output_path, output_content);
       count++;
     }
   }
@@ -65,13 +73,13 @@ function walk(dir) {
     rl.close();
   }
   function x(index) {
-    console.log(index, dirs.length, dirs[index]);
+    // console.log(index, dirs.length, dirs[index]);
     if ( index >= dirs.length ) {
       rl.close();
       if (stack.length > 0 ) {
         walk(stack.shift());
       } else {
-        console.log('final', count);
+        console.log(count, 'js files are created or updated');
       }
       return;
     }
