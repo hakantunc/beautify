@@ -59,9 +59,12 @@ function walk(dir) {
     var stats = fs.lstatSync(dir_path);
     if ( stats.isFile() && path.extname(dirs[i]) === '.js' ) {
       var file = fs.readFileSync(dir_path, 'utf8');
-      var tail = dir.substr(base.length+1);
-      var output_path = path.resolve(cwd, out_dir, tail, dirs[i]);
-      mkdirp.sync(path.resolve(cwd, out_dir, tail));
+      var output_path = dir_path;
+      if (!program.replace) {
+        var tail = dir.substr(base.length+1);
+        output_path = path.resolve(cwd, out_dir, tail, dirs[i]);
+        mkdirp.sync(path.resolve(cwd, out_dir, tail));
+      }
       var output_content = beautify(file, options);
       fs.writeFileSync(output_path, output_content);
       count++;
